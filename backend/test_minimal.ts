@@ -1,0 +1,10 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+const app = express();
+console.log('Express loaded!');
+app.get('/', (req, res) => res.send('OK'));
+app.listen(5001, () => console.log('Server on 5001'));

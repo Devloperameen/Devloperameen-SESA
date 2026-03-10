@@ -1,0 +1,5 @@
+{
+    "typescript.autoClosingTags": false,
+    "kiroAgent.configureMCP": "Disabled",
+    "git.ignoreLimitWarning": true
+}

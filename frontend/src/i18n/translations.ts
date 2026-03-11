@@ -30,7 +30,7 @@ export const translations: Record<string, { en: string; am: string }> = {
 
     // Landing hero
     tagline: { en: 'Empower Your Future Through Smart Learning', am: 'የወደፊትህን በስማርት ትምህርት አበረታታ' },
-    heroDesc: { en: 'Safe Educational & Skill Academy (SESA) delivers world-class, exam-focused learning tools, video lessons, and motivation for high school students — from Ethiopia to the globe. Prepare smarter, grow faster, and achieve more.', am: 'ሴፍ ኤዱኬሽናል እና ስኪል አካዳሚ (ሴሳ) ዓለም አቀፍ ደረጃ ያለው፣ ፈተና-ተኮር የትምህርት መሳሪያዎች፣ ቪዲዮ ትምህርቶች እና ለሁለተኛ ደረጃ ተማሪዎች ተነሳሽነት ያቀርባል — ከኢትዮጵያ ወደ ዓለም። ብልህ ተዘጋጅ፣ በፍጥነት ተማር፣ ተጨማሪ ለማሳካት።' },
+    heroDesc: { en: 'SafeEdu Educational Platform delivers world-class, exam-focused learning tools, video lessons, and motivation for high school students — from Ethiopia to the globe. Prepare smarter, grow faster, and achieve more.', am: 'ሴፍ ኤዱ ኤዱኬሽናል ፕላትፎርም ዓለም አቀፍ ደረጃ ያለው፣ ፈተና-ተኮር የትምህርት መሳሪያዎች፣ ቪዲዮ ትምህርቶች እና ለሁለተኛ ደረጃ ተማሪዎች ተነሳሽነት ያቀርባል — ከኢትዮጵያ ወደ ዓለም። ብልህ ተዘጋጅ፣ በፍጥነት ተማር፣ ተጨማሪ ለማሳካት።' },
     startLearning: { en: 'Start Learning', am: 'ትምህርት ይጀምሩ' },
     watchDemo: { en: 'Watch Demo', am: 'ማሳያ ይመልከቱ' },
     clickOutsideToClose: { en: 'Click outside or press Close to return', am: 'ለመመለስ ውጭ ጠቅ ያድርጉ ወይም ዝጋን ይጫኑ' },
@@ -48,8 +48,8 @@ export const translations: Record<string, { en: string; am: string }> = {
     clickToChangeQuote: { en: 'Click to change now', am: 'አሁን ለመቀየር ጠቅ ያድርጉ' },
     watchOurStory: { en: 'Watch Our Story', am: 'ታሪካችንን ይመልከቱ' },
 
-    // Why SESA
-    whyChooseSesa: { en: 'Why Choose SESA?', am: 'ለምን ሴሳ ይመረጣል?' },
+    // Why SafeEdu
+    whyChooseSesa: { en: 'Why Choose SafeEdu?', am: 'ለምን ሴፍ ኤዱ ይመረጣል?' },
     whyStudentsTeachers: { en: 'Why Students & Teachers Choose', am: 'ተማሪዎች እና መምህራን ለምን ይመርጣሉ' },
     examFocused: { en: 'Exam-Focused', am: 'ፈተና-ተኮር' },
     examAligned: { en: 'Aligned with Ethiopian national exams for Grade 9-12', am: 'ከ9ኛ እስከ 12ኛ ክፍል ብሔራዊ ፈተና ጋር የተያያዘ' },

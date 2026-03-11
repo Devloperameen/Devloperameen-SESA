@@ -9,10 +9,10 @@ export const config = {
 
   // Application Settings
   app: {
-    name: import.meta.env.VITE_APP_NAME || 'SESA Educational Platform',
+    name: import.meta.env.VITE_APP_NAME || 'SafeEdu Educational Platform',
     description: import.meta.env.VITE_APP_DESCRIPTION || 'Full-stack educational platform with course management',
     version: import.meta.env.VITE_APP_VERSION || '1.0.0',
-    supportEmail: 'support@sesa.education',
+    supportEmail: 'support@safeedu.education',
   },
 
   // Feature Flags

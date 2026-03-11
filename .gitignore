@@ -1,0 +1,15 @@
+# Large files
+latest-commit.tar
+*.tar
+*.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Kiro
+.kiro/

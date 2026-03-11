@@ -24,8 +24,8 @@
     "seed": "tsx src/utils/seed.ts",
     "seed:enhanced": "tsx src/utils/seedEnhanced.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "render-build": "npm run build",
-    "render-start": "npm start"
+    "render-build": "npm install && npx tsc",
+    "render-start": "node dist/index.js"
   },
   "keywords": ["education", "platform", "course-management", "mern"],
   "author": "SESA Team",

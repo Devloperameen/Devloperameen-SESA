@@ -4,6 +4,7 @@ import { GraduationCap, Menu, X, Sun, Moon, LogOut, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import NotificationBell from './NotificationBell';
 
 const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -116,8 +117,9 @@ const Navbar: React.FC = () => {
                     </button>
 
                     {isAuthenticated ? (
-                        <div className="flex items-center space-x-4">
-                            <span className="text-sm font-medium">Hello, {user?.name}</span>
+                        <div className="flex items-center space-x-3">
+                            <NotificationBell />
+                            <span className="text-sm font-medium text-dark-bg dark:text-light hidden xl:block">Hello, {user?.name}</span>
                             <button
                                 onClick={logout}
                                 className="btn-primary flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-all"
@@ -136,7 +138,8 @@ const Navbar: React.FC = () => {
                     )}
                 </div>
 
-                <div className="lg:hidden flex items-center space-x-4">
+                <div className="lg:hidden flex items-center space-x-2">
+                    {isAuthenticated && <NotificationBell />}
                     <button
                         onClick={toggleDarkMode}
                         className={`p-2 rounded-xl transition-all ${isDarkMode ? 'text-yellow-400' : 'text-gray-600'}`}

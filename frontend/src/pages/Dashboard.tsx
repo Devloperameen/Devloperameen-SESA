@@ -7,9 +7,16 @@ import {
     BookOpen,
     Clock3,
     DollarSign,
+    Flame,
     Plus,
     Shield,
+    Star,
+    TrendingUp,
     Users,
+    Zap,
+    CheckCircle,
+    Settings,
+    UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
@@ -27,6 +34,28 @@ import { UserRole } from '../types';
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042'];
 
+/* ── Mini animated circular progress ring ── */
+const ProgressRing: React.FC<{ percent: number; size?: number; stroke?: number; color?: string }> = ({
+    percent, size = 52, stroke = 5, color = '#06b6d4',
+}) => {
+    const r = (size - stroke) / 2;
+    const circ = 2 * Math.PI * r;
+    const offset = circ - (percent / 100) * circ;
+    return (
+        <svg width={size} height={size} className="-rotate-90">
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1e293b" strokeWidth={stroke} />
+            <motion.circle
+                cx={size / 2} cy={size / 2} r={r} fill="none"
+                stroke={color} strokeWidth={stroke}
+                strokeLinecap="round"
+                strokeDasharray={circ}
+                initial={{ strokeDashoffset: circ }}
+                animate={{ strokeDashoffset: offset }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+            />
+        </svg>
+    );
+};
 
 interface DashboardUserRecord {
     _id: string;
@@ -199,20 +228,99 @@ const Dashboard: React.FC = () => {
     if (isStudent) {
         const xp = approvedStudentCourses.length * 250 + pendingStudentCourses.length * 60;
         const level = Math.max(1, Math.ceil(xp / 500));
+        const streakDays = Math.max(1, approvedStudentCourses.length);
 
         return (
-            <DashboardLayout
-                token={token}
-                fetchCourses={fetchStudentCards}
-                user={{
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    streakDays: Math.max(1, approvedStudentCourses.length),
-                    totalXp: xp,
-                    levelLabel: `Level ${level} Learner`,
-                }}
-            />
+            <>
+                {/* Student XP / Streak hero strip */}
+                <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mx-4 md:mx-8 mt-6 rounded-2xl bg-gradient-to-r from-[#0d2247] via-[#112f5a] to-[#0d2247] border border-slate-700 p-5 flex flex-wrap gap-5 items-center"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg">
+                            <Star className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 font-medium">Level</p>
+                            <p className="text-xl font-black text-white">Level {level} Learner</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center shadow-lg">
+                            <Flame className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 font-medium">Study Streak</p>
+                            <p className="text-xl font-black text-white">{streakDays} Day{streakDays !== 1 ? 's' : ''} 🔥</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg">
+                            <Zap className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 font-medium">Total XP</p>
+                            <p className="text-xl font-black text-white">{xp.toLocaleString()} XP</p>
+                        </div>
+                    </div>
+                    <div className="ml-auto">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                            <TrendingUp className="w-4 h-4 text-cyan-400" />
+                            <span className="text-sm font-semibold text-cyan-300">{approvedStudentCourses.length} Active Course{approvedStudentCourses.length !== 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Course progress rings */}
+                {approvedStudentCourses.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="mx-4 md:mx-8 mt-5 rounded-2xl border border-slate-700 bg-[#112240] p-5"
+                    >
+                        <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-4">Course Progress</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {approvedStudentCourses.slice(0, 10).map((c, i) => {
+                                const ringColor = i % 3 === 0 ? '#06b6d4' : i % 3 === 1 ? '#a855f7' : '#10b981';
+                                return (
+                                    <motion.div
+                                        key={c.id}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.06 }}
+                                        className="flex flex-col items-center gap-2 p-3 rounded-xl bg-slate-900/50 border border-slate-700 hover:border-cyan-500/50 transition-colors"
+                                    >
+                                        <div className="relative">
+                                            <ProgressRing percent={c.progressPercent} color={ringColor} />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-xs font-black text-white">{c.progressPercent}%</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-center font-semibold text-slate-300 leading-tight line-clamp-2">{c.title}</p>
+                                        <span className="text-[10px] text-slate-500">{c.completedLessons}/{c.totalLessons} lessons</span>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+
+                <DashboardLayout
+                    token={token}
+                    fetchCourses={fetchStudentCards}
+                    user={{
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        streakDays,
+                        totalXp: xp,
+                        levelLabel: `Level ${level} Learner`,
+                    }}
+                />
+            </>
         );
     }
 
@@ -269,6 +377,59 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
                 </motion.div>
+
+                {/* Quick Actions for Admin */}
+                {isAdminLike && (
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Quick Actions</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[
+                                { label: 'Approve Courses', icon: CheckCircle, to: '/admin/approvals', color: 'from-emerald-600 to-teal-600', badge: pendingQueue.length },
+                                { label: 'Manage Users', icon: UserCheck, to: '/admin/users', color: 'from-blue-600 to-cyan-600', badge: null },
+                                { label: 'View Revenue', icon: DollarSign, to: '/dashboard', color: 'from-amber-500 to-orange-500', badge: null },
+                                { label: 'Settings', icon: Settings, to: '/admin/settings', color: 'from-purple-600 to-violet-600', badge: null },
+                            ].map((action) => (
+                                <Link key={action.label} to={action.to}>
+                                    <motion.div
+                                        whileHover={{ y: -3, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`relative rounded-2xl bg-gradient-to-br ${action.color} p-4 flex flex-col items-start gap-2 shadow-lg cursor-pointer`}
+                                    >
+                                        {action.badge !== null && action.badge > 0 && (
+                                            <span className="absolute top-2 right-2 bg-white text-slate-800 text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">{action.badge}</span>
+                                        )}
+                                        <action.icon className="w-6 h-6 text-white/90" />
+                                        <span className="text-sm font-bold text-white">{action.label}</span>
+                                    </motion.div>
+                                </Link>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Quick Stats for Instructor */}
+                {isInstructor && (
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {[
+                                { label: 'My Courses', value: courses.length, icon: BookOpen, color: 'text-cyan-400' },
+                                { label: 'Enrolled Students', value: students.length, icon: Users, color: 'text-emerald-400' },
+                                { label: 'Pending Requests', value: pendingQueue.length, icon: Clock3, color: 'text-amber-400' },
+                            ].map((s, i) => (
+                                <motion.div key={s.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
+                                    className="rounded-2xl border border-slate-700 bg-[#112240] p-5 flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center`}>
+                                        <s.icon className={`w-6 h-6 ${s.color}`} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400">{s.label}</p>
+                                        <p className="text-2xl font-black text-white">{s.value}</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     {stats.map((item, index) => (

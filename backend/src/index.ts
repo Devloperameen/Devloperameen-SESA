@@ -18,6 +18,8 @@ import analyticsRoutes from './routes/analytics.js';
 import certificateRoutes from './routes/certificates.js';
 import adminManagementRoutes from './routes/adminManagement.js';
 import dashboardRoutes from './routes/dashboard.js';
+import notificationRoutes from './routes/notifications.js';
+import searchRoutes from './routes/search.js';
 import http from 'http';
 import { initSocket } from './utils/socket.js';
 
@@ -33,8 +35,11 @@ app.use(helmet({
 }));
 
 // CORS Configuration
+const allowedOrigin = process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : '*');
+if (allowedOrigin) console.log(`[CORS] Allowed origin: ${allowedOrigin}`);
+
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : '*'),
+    origin: allowedOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
@@ -54,7 +59,35 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Stricter rate limit for auth routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: 'Too many auth requests, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/auth/', authLimiter);
+
 app.use(express.json({ limit: '10kb' })); // Body parser with size limit
+
+// ── Health Check ──────────────────────────────────────────────
+app.get('/api/health', (_req, res) => {
+    const mem = process.memoryUsage();
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(process.uptime()),
+        dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        memory: {
+            rss: `${Math.round(mem.rss / 1024 / 1024)} MB`,
+            heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)} MB`,
+            heapTotal: `${Math.round(mem.heapTotal / 1024 / 1024)} MB`,
+        },
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+    });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -73,8 +106,10 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/admin/management', adminManagementRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/search', searchRoutes);
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
     res.send('SESA Secure API with Real-time Notifications is running...');
 });
 
@@ -85,7 +120,7 @@ const server = http.createServer(app);
 initSocket(server);
 
 // Database connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://<db_username>:<db_password>@cluster0.2amblcf.mongodb.net/sesa?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv:<db_username>:<db_password>@cluster0.2amblcf.mongodb.net/sesa?retryWrites=true&w=majority&appName=Cluster0';
 
 const clientOptions = { 
     serverApi: { version: '1' as const, strict: true, deprecationErrors: true } 

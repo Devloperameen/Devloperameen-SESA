@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     GraduationCap, BookOpen, Users, Award, Play,
     Star, Globe, Shield, TrendingUp,
     CheckCircle, Sparkles, Rocket,
     RefreshCcw, Quote, UserPlus, Lock,
     ChevronDown, Trophy, MessageSquare,
-    Zap, Target, Monitor, Heart, ImageIcon
+    Zap, Target, Monitor, Heart, ImageIcon, Search
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { SafeImage } from '../components/ui/SafeImage';
@@ -124,8 +124,10 @@ const BRAND_GLOBE = String.fromCodePoint(0x1f30d);
 
 const Landing: React.FC = () => {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const [qi, setQi] = useState(0);
     const [heroIndex, setHeroIndex] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
     const [selectedImage, setSelectedImage] = useState<{ img: string; title: string } | null>(null);
     const nq = () => { let n; do { n = Math.floor(Math.random() * QS.length); } while (n === qi); setQi(n); };
     useEffect(() => { const id = setInterval(nq, 7000); return () => clearInterval(id); }, [qi]);
@@ -135,6 +137,13 @@ const Landing: React.FC = () => {
         }, 4000);
         return () => window.clearInterval(rotateId);
     }, []);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/student/browse?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
 
     const techStack = [
         { n: 'React', i: '⚛️', c: 'from-cyan-400 to-blue-500', d: t('Dynamic UIs', 'ዳይናሚክ UI'), lvl: t('Beginner → Advanced', 'ጀማሪ → ከፍተኛ'), topics: ['Components', 'Hooks', 'State', 'Router'] },
@@ -321,6 +330,36 @@ const Landing: React.FC = () => {
                                     {t('watchDemo')}
                                 </motion.button>
                             </a>
+                        </motion.div>
+
+                        {/* Course Search Teaser */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.7, delay: 0.8 }}
+                            className="mt-6"
+                        >
+                            <form onSubmit={handleSearch} className="flex items-center gap-2 max-w-md mx-auto">
+                                <div className="flex-1 flex items-center gap-2 bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl px-4 py-2.5 focus-within:border-cyan-400/70 transition-all">
+                                    <Search className="w-4 h-4 text-white/60 flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        placeholder={t('Search courses, subjects...', 'ኮርሶችን ይፈልጉ...')}
+                                        className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-white/50 text-sm"
+                                    />
+                                </div>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    type="submit"
+                                    className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-2xl text-sm transition-colors shadow-lg"
+                                >
+                                    {t('Search', 'ፈልግ')}
+                                </motion.button>
+                            </form>
+                            <p className="text-white/50 text-xs mt-2">{t('Popular: React, Physics, Math, Python', 'ታዋቂ: React, Physics, Math, Python')}</p>
                         </motion.div>
                     </div>
                 </div>

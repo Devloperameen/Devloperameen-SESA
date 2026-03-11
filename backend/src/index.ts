@@ -139,7 +139,16 @@ const server = http.createServer(app);
 initSocket(server);
 
 // Database connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv:<db_username>:<db_password>@cluster0.2amblcf.mongodb.net/sesa?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+    console.error('CRITICAL ERROR: MONGO_URI is not defined in environment variables');
+    process.exit(1);
+}
+
+// Masked URI for logging
+const maskedURI = MONGO_URI.replace(/\/\/.*@/, '//****:****@');
+console.log(`[Database] Attempting to connect to: ${maskedURI}`);
 
 const clientOptions = { 
     serverApi: { version: '1' as const, strict: true, deprecationErrors: true } 
@@ -148,9 +157,14 @@ const clientOptions = {
 mongoose.connect(MONGO_URI, clientOptions)
     .then(() => {
         console.log('Connected to MongoDB');
-        server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        server.listen(PORT, () => {
+            console.log(`[🚀] Server is live on port ${PORT}`);
+            console.log(`[🌍] Environment: ${process.env.NODE_ENV || 'development'}`);
+        });
     })
     .catch(err => {
-        console.error('MongoDB connection error:', err);
+        console.error('❌ MongoDB Connection Failed!');
+        console.error(`Error Details: ${err.message}`);
+        console.error('Please ensure your IP is whitelisted in MongoDB Atlas (0.0.0.0/0 for testing).');
         process.exit(1);
     });

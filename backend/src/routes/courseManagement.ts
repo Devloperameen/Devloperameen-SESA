@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticate, checkRole, type AuthRequest } from '../middleware/auth.js';
 import { UserRole } from '../models/User.js';
+import Course, { type ICourse } from '../models/Course.js';
 import {
     getPendingReviewCourses,
     previewCourseForReview,
@@ -47,7 +48,10 @@ router.get('/admin/courses/pending-review',
 router.get('/admin/courses/:courseId/preview', 
     authenticate, 
     checkRole([UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR]), 
-    previewCourseForReview
+    (req: AuthRequest, res: Response) => {
+        const courseId = req.params.courseId as string;
+        previewCourseForReview(req, res);
+    }
 );
 
 /**
@@ -63,7 +67,10 @@ router.put('/admin/courses/:courseId/review',
         body('adminComment').optional().isString().trim()
     ],
     validate,
-    reviewCourseDecision
+    (req: AuthRequest, res: Response) => {
+        const courseId = req.params.courseId as string;
+        reviewCourseDecision(req, res);
+    }
 );
 
 // ─── FREE PREVIEW ROUTES ──────────────────────────────────────────────────────
@@ -235,7 +242,7 @@ router.get('/teacher/courses/my-stats',
             }).select('enrolledStudents');
 
             const totalStudents = publishedCoursesData.reduce(
-                (sum, course) => sum + course.enrolledStudents.length, 0
+                (sum: number, course: ICourse) => sum + (course.enrolledStudents?.length || 0), 0
             );
 
             res.json({

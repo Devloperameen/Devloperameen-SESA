@@ -88,7 +88,7 @@ initSocket(server);
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://<db_username>:<db_password>@cluster0.2amblcf.mongodb.net/sesa?retryWrites=true&w=majority&appName=Cluster0';
 
 const clientOptions = { 
-    serverApi: { version: '1', strict: true, deprecationErrors: true } 
+    serverApi: { version: '1' as const, strict: true, deprecationErrors: true } 
 };
 
 mongoose.connect(MONGO_URI, clientOptions)

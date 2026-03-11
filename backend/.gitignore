@@ -1,43 +1,79 @@
-# Dependencies
-node_modules/
+# ============================================
+# SENSITIVE DEPLOYMENT FILES - DO NOT COMMIT
+# ============================================
+
+# Environment Variables (CRITICAL - Contains passwords and secrets)
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Deployment Documentation (Contains sensitive configuration)
+DEPLOYMENT_CHECKLIST.md
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_READY.md
+QUICK_START_DEPLOYMENT.md
+README_DEPLOYMENT.md
+SETUP_GUIDE.md
+DEPLOYMENT_SUMMARY.txt
+
+# Deployment Scripts (May contain sensitive data)
+setup-deployment.sh
+quick-deploy-fix.sh
+deploy-test.sh
+
+# MongoDB and Database
+*.mongodb
+*.db
+
+# Logs (May contain sensitive information)
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+backend/debug*.log
+backend/error.log
+backend/startup_error.txt
 
-# Production builds
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build outputs
 dist/
+dist-ssr/
 build/
+out/
+*.local
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE and editor files
-.vscode/
-.idea/
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
 *.swp
 *.swo
 *~
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-logs/
-*.log
-debug*.log
-startup_error.txt
-error.log
+# Backup files
+*.backup
+*.bak
+*.old
 
 # Runtime data
 pids/
@@ -45,15 +81,8 @@ pids/
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-jspm_packages/
+# TypeScript
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
@@ -61,57 +90,50 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
-# Optional stylelint cache
-.stylelintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
 # Optional REPL history
 .node_repl_history
 
 # Output of 'npm pack'
 *.tgz
 
-# Yarn Integrity file
+# Yarn
 .yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
 
-# Next.js build output
-.next
+# Next.js
+.next/
 
-# Nuxt.js build / generate output
-.nuxt
+# Nuxt.js
+.nuxt/
 
-# Gatsby files
+# Gatsby
 .cache/
-public
+public/
 
-# Storybook build outputs
-.out
-.storybook-out
+# Serverless
+.serverless/
 
-# Temporary folders
-tmp/
-temp/
+# FuseBox
+.fusebox/
 
-# Vite
-.vite/
+# DynamoDB Local
+.dynamodb/
 
-# TypeScript
-*.tsbuildinfo
+# TernJS
+.tern-port
 
-# Test files
-test_*.js
-test_*.ts
-seed_temp.js
+# Stores VSCode versions used for testing
+.vscode-test
 
-# Database
-*.sqlite
-*.db
+# Miscellaneous
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

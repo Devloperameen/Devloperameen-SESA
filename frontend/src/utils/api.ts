@@ -146,6 +146,10 @@ export const apiService = {
       api.patch(`/course-management/courses/${courseId}/toggle-lock`, { locked }),
     toggleCourseVisibility: (courseId: string, visible: boolean) =>
       api.patch(`/course-management/courses/${courseId}/toggle-visibility`, { visible }),
+    
+    // User management
+    getAllUsers: () =>
+      api.get('/users'),
   },
 
   // Announcement endpoints
@@ -188,6 +192,14 @@ export const apiService = {
       api.post('/payments', data),
     getHistory: () =>
       api.get('/payments/history'),
+  },
+
+  // Search endpoints
+  search: {
+    query: (q: string, filters?: any) => 
+      api.get('/search', { params: { q, ...filters } }),
+    getSuggestions: (q: string) => 
+      api.get('/search/suggestions', { params: { q } }),
   },
 
   // Utility function to check API health

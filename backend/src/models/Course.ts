@@ -5,6 +5,12 @@ export interface ILesson {
     title: string;
     videoUrl: string;
     order: number;
+    description?: string;
+    resources?: {
+        title: string;
+        url: string;
+        type: 'pdf' | 'link' | 'code' | 'doc';
+    }[];
 }
 
 export interface ICourse extends Document {
@@ -13,6 +19,8 @@ export interface ICourse extends Document {
     resourceUrl: string;
     previewVideoUrl?: string;
     lessons: ILesson[];
+    quizzes: mongoose.Types.ObjectId[];
+    assignments: mongoose.Types.ObjectId[];
     youtubeVideoId?: string;
     thumbnailUrl?: string;
     lockedContent: string[];
@@ -58,7 +66,13 @@ export interface ICourse extends Document {
 const LessonSchema = new Schema({
     title: { type: String, required: true },
     videoUrl: { type: String, required: true },
-    order: { type: Number, required: true }
+    order: { type: Number, required: true },
+    description: { type: String },
+    resources: [{
+        title: { type: String, required: true },
+        url: { type: String, required: true },
+        type: { type: String, enum: ['pdf', 'link', 'code', 'doc'], default: 'link' }
+    }]
 });
 
 const CourseSchema: Schema = new Schema({
@@ -67,6 +81,8 @@ const CourseSchema: Schema = new Schema({
     resourceUrl: { type: String, required: true },
     previewVideoUrl: { type: String },
     lessons: [LessonSchema],
+    quizzes: [{ type: Schema.Types.ObjectId, ref: 'Quiz' }],
+    assignments: [{ type: Schema.Types.ObjectId, ref: 'Assignment' }],
     youtubeVideoId: { type: String },
     thumbnailUrl: { type: String },
     lockedContent: [{ type: String }],

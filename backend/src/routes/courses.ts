@@ -160,6 +160,7 @@ router.post(
                 duration,
                 tags,
                 price,
+                gradeLevel,
             } = req.body;
 
             const effectivePreviewVideo = previewVideoUrl || resourceUrl;
@@ -197,6 +198,7 @@ router.post(
                 level,
                 duration,
                 tags,
+                gradeLevel,
                 price: typeof price === 'number' ? price : Number(price) || 0,
                 instructor: req.user!.id,
                 students: [],
@@ -296,7 +298,7 @@ router.get('/my/created', authenticate, checkRole([UserRole.INSTRUCTOR, UserRole
 // @route   GET api/courses/my/enrolled
 // @desc    Get courses enrolled by current student
 // @access  Private (Student)
-router.get('/my/enrolled', authenticate, checkRole([UserRole.STUDENT, UserRole.PREMIUM_STUDENT]), async (req: AuthRequest, res: Response) => {
+router.get('/my/enrolled', authenticate, checkRole([UserRole.STUDENT, UserRole.PREMIUM_STUDENT, UserRole.INSTRUCTOR, UserRole.ASSISTANT_INSTRUCTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR]), async (req: AuthRequest, res: Response) => {
     try {
         const approvedOnly = req.query.approved === 'true';
         const studentId = req.user!.id;

@@ -11,6 +11,15 @@ import {
     Search,
     Sparkles,
     Trophy,
+    LayoutDashboard,
+    Users,
+    Settings,
+    Shield,
+    FileCheck,
+    BarChart3,
+    GraduationCap,
+    Heart,
+    LifeBuoy
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import {
@@ -65,6 +74,7 @@ export interface DashboardUser {
     streakDays: number;
     totalXp: number;
     levelLabel: string;
+    role?: string;
 }
 
 export interface ActivityFeedItem {
@@ -284,8 +294,105 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({
         onOpenCourse?.(course);
     };
 
+    // Role-based Navigation Configuration
+    const getNavItems = () => {
+        const role = user?.role || 'STUDENT';
+        const base = [
+            { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
+        ];
+
+        if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+            return [
+                ...base,
+                { label: 'Users', icon: Users, to: '/admin/users' },
+                { label: 'Instructors', icon: Shield, to: '/admin/instructors' },
+                { label: 'Approvals', icon: FileCheck, to: '/admin/approvals' },
+                { label: 'Analytics', icon: BarChart3, to: '/admin/settings' },
+                { label: 'Settings', icon: Settings, to: '/admin/settings' },
+            ];
+        }
+
+        if (role === 'MODERATOR') {
+            return [
+                ...base,
+                { label: 'Course Pipeline', icon: FileCheck, to: '/admin/approvals' },
+                { label: 'User Reports', icon: Shield, to: '/admin/users' },
+                { label: 'Live Courses', icon: BookOpen, to: '/admin/courses' },
+            ];
+        }
+
+        if (role === 'INSTRUCTOR' || role === 'ASSISTANT_INSTRUCTOR') {
+            return [
+                ...base,
+                { label: 'My Courses', icon: BookOpen, to: '/instructor/my-courses' },
+                { label: 'Create Course', icon: Plus, to: '/instructor/create-course' },
+                { label: 'My Students', icon: Users, to: '/instructor/students' },
+                { label: 'Analytics', icon: BarChart3, to: '/instructor/analytics' },
+            ];
+        }
+
+        if (role === 'PREMIUM_STUDENT') {
+            return [
+                ...base,
+                { label: 'My Learning', icon: GraduationCap, to: '/dashboard' },
+                { label: 'Browse Courses', icon: Search, to: '/student/browse' },
+                { label: 'VIP Resources', icon: Heart, to: '/student/resources' },
+                { label: 'Certificates', icon: Trophy, to: '/student/certificates' },
+                { label: 'Priority Support', icon: LifeBuoy, to: '/dashboard' },
+            ];
+        }
+
+        return [
+            ...base,
+            { label: 'My Courses', icon: GraduationCap, to: '/dashboard' },
+            { label: 'Browse', icon: Search, to: '/student/browse' },
+            { label: 'Certificates', icon: Trophy, to: '/student/certificates' },
+        ];
+    };
+
+    const navItems = getNavItems();
+
     return (
-        <div className={cn('text-slate-100', className)}>
+        <div className={cn('text-slate-100 flex min-h-screen bg-slate-950', className)}>
+            {/* Sidebar Navigation */}
+            <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-slate-900/50 backdrop-blur-xl sticky top-0 h-screen overflow-y-auto">
+                <div className="p-8">
+                    <h2 className="text-xl font-black italic bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                        SESA ACADEMY
+                    </h2>
+                </div>
+                
+                <nav className="flex-1 px-4 space-y-2">
+                    {navItems.map((item) => (
+                        <a
+                            key={item.label}
+                            href={item.to}
+                            className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all group",
+                                window.location.pathname === item.to 
+                                ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                                : "text-slate-400 hover:bg-white/5 hover:text-white"
+                            )}
+                        >
+                            <item.icon className={cn("w-5 h-5", window.location.pathname === item.to ? "text-white" : "text-slate-500 group-hover:text-primary")} />
+                            {item.label}
+                        </a>
+                    ))}
+                </nav>
+
+                <div className="p-6 border-t border-white/5">
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-5 border border-white/5">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Platform Status</p>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-bold text-slate-200 uppercase tracking-tighter">Systems Online</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col">
             <motion.main
                 className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-12 lg:px-8"
                 variants={containerVariants}
@@ -581,6 +688,7 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
         </div>
     );
 };

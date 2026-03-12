@@ -20,6 +20,9 @@ import adminManagementRoutes from './routes/adminManagement.js';
 import dashboardRoutes from './routes/dashboard.js';
 import notificationRoutes from './routes/notifications.js';
 import searchRoutes from './routes/search.js';
+import assessmentRoutes from './routes/assessments.js';
+import forumRoutes from './routes/forum.js';
+import messageRoutes from './routes/messages.js';
 import http from 'http';
 import { initSocket } from './utils/socket.js';
 
@@ -139,6 +142,9 @@ app.use('/api/admin/management', adminManagementRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/assessments', assessmentRoutes);
+app.use('/api/forums', forumRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.get('/', (_req, res) => {
     res.send('SESA Secure API with Real-time Notifications is running...');

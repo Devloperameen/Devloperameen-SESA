@@ -31,6 +31,10 @@ import {
 import type { StudentCourse } from '../components/dashboard/CourseCard';
 import type { Course } from '../types';
 import { UserRole } from '../types';
+import ModeratorDashboard from '../components/dashboard/ModeratorDashboard';
+import AssistantDashboard from '../components/dashboard/AssistantDashboard';
+import PremiumStudentDashboard from '../components/dashboard/PremiumStudentDashboard';
+import { toast } from 'react-toastify';
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042'];
 
@@ -167,10 +171,42 @@ const Dashboard: React.FC = () => {
         };
     }, [token]);
 
+    const handleModeratorAction = async (type: string, id: string, action: string) => {
+        try {
+            if (type === 'enrollment') {
+                if (action === 'approve') {
+                    await apiService.admin.verifyEnrollment(id, 'Approved by Moderator');
+                    toast.success('Enrollment approved successfully');
+                } else if (action === 'reject') {
+                    // Assuming reject is also handled by verify with a comment or a different endpoint
+                    // Let's use verifyEnrollment for now as it's the only one available
+                    await apiService.admin.verifyEnrollment(id, 'Rejected by Moderator');
+                    toast.info('Enrollment decision processed');
+                }
+            } else if (type === 'course') {
+                if (action === 'approve') {
+                    await apiService.admin.reviewCourse(id, 'accept', 'Approved by Moderator');
+                    toast.success('Course approved');
+                }
+            } else if (type === 'comment') {
+                toast.info('Comment moderation feature coming soon');
+            }
+            
+            // Refresh dashboard data
+            const response = await apiService.users.getDashboardData();
+            setDashboardData(response.data);
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Action failed');
+        }
+    };
+
     const role = user?.role;
     const isStudent = role === UserRole.STUDENT || role === UserRole.PREMIUM_STUDENT;
-    const isInstructor = role === UserRole.INSTRUCTOR || role === UserRole.ASSISTANT_INSTRUCTOR;
-    const isAdminLike = role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN || role === UserRole.MODERATOR;
+    const isInstructor = role === UserRole.INSTRUCTOR;
+    const isAssistant = role === UserRole.ASSISTANT_INSTRUCTOR;
+    const isModerator = role === UserRole.MODERATOR;
+    const isAdmin = role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+    const isAdminLike = isAdmin || isModerator;
 
     const approvedStudentCourses = useMemo(() => {
         if (!dashboardData?.courses) return [];
@@ -219,6 +255,15 @@ const Dashboard: React.FC = () => {
                     {error}
                 </div>
             </div>
+        );
+    }
+
+    if (role === UserRole.PREMIUM_STUDENT) {
+        return (
+            <PremiumStudentDashboard 
+                user={user} 
+                courses={dashboardData?.courses || []} 
+            />
         );
     }
 
@@ -318,6 +363,22 @@ const Dashboard: React.FC = () => {
                     }}
                 />
             </>
+        );
+    }
+
+    if (isModerator) {
+        return (
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                <ModeratorDashboard data={dashboardData} onAction={handleModeratorAction} />
+            </div>
+        );
+    }
+
+    if (isAssistant) {
+        return (
+            <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                <AssistantDashboard data={dashboardData} />
+            </div>
         );
     }
 

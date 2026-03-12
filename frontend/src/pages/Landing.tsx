@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-    GraduationCap, BookOpen, Users, Award, Play,
-    Star, Globe, Shield, TrendingUp,
-    CheckCircle, Sparkles, Rocket,
-    RefreshCcw, Quote, UserPlus, Lock,
-    ChevronDown, Trophy, MessageSquare,
-    Zap, Target, Monitor, Heart, ImageIcon, Search
+    Award, BookOpen, CheckCircle, ChevronDown, Globe, GraduationCap, Heart, ImageIcon, Lock, MessageSquare, Monitor, Play, Quote, RefreshCcw, Rocket, Search, Shield, Sparkles, Star, Target, TrendingUp, Trophy, UserPlus, Users, Zap
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { SafeImage } from '../components/ui/SafeImage';
@@ -123,11 +118,34 @@ const HERO_IMAGES = [
 const BRAND_GLOBE = String.fromCodePoint(0x1f30d);
 
 const Landing: React.FC = () => {
-    const { t } = useLanguage();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [qi, setQi] = useState(0);
     const [heroIndex, setHeroIndex] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const [activeMotivationCat, setActiveMotivationCat] = useState('Success');
+    
+    const motivationCategories = {
+        Success: [
+            { id: 'ZXGWYe01Ya8', title: 'The Power of Persistence', author: 'Jim Rohn' },
+            { id: 'tPnK6Ba4fS4', title: 'How to Achieve Your Goals', author: 'SESA Academy' },
+            { id: 'wnHW6o8WMas', title: 'Success Mindset', author: 'Brian Tracy' }
+        ],
+        Education: [
+            { id: 'ks2QSk09ndE', title: 'Why Knowledge is Power', author: 'Education First' },
+            { id: 'un8K7S6RIsA', title: 'Learning How to Learn', author: 'Barbara Oakley' },
+            { id: '7nyZ_16_A72', title: 'Student Success Habits', author: 'SESA Insights' }
+        ],
+        Discipline: [
+            { id: 'vMv3vGfF0L8', title: 'The Secret to Discipline', author: 'Jocko Willink' },
+            { id: '2VDSpxX88pA', title: 'The 5 AM Club Strategy', author: 'Robin Sharma' }
+        ],
+        Productivity: [
+            { id: 'W0v_7nyZ_16', title: 'Master Your Time', author: 'Work Ethic' },
+            { id: 'v27H868X9kY', title: 'Stop Procrastinating Now', author: 'Productivity Pro' }
+        ]
+    };
     const [selectedImage, setSelectedImage] = useState<{ img: string; title: string } | null>(null);
     const nq = () => { let n; do { n = Math.floor(Math.random() * QS.length); } while (n === qi); setQi(n); };
     useEffect(() => { const id = setInterval(nq, 7000); return () => clearInterval(id); }, [qi]);
@@ -402,107 +420,154 @@ const Landing: React.FC = () => {
             </motion.div>
 
             {/* ══════ MOTIVATION & INSPIRATION ══════ */}
-            <Fade id="motivation" className="scroll-mt-24 py-14 md:py-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-dark-bg dark:via-dark-card dark:to-dark-bg" />
-                <div className="absolute inset-0 opacity-30" style={{ 
-                    backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)'
-                }} />
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="text-center mb-10">
+            <Fade id="motivation" className="scroll-mt-24 py-14 md:py-24 bg-white dark:bg-dark-card border-y border-gray-100 dark:border-gray-800 relative z-10">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto text-center mb-12">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             whileInView={{ scale: 1, opacity: 1 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-black text-xs uppercase tracking-widest rounded-full mb-6"
                         >
-                            <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-primary to-secondary text-white font-bold text-sm rounded-full shadow-lg">{t('💡 Stay Motivated', '💡 ተነሳሽ ይሁኑ')}</span>
+                            <Sparkles className="w-4 h-4" />
+                            {t('Stay Inspired', 'ተነሳሽ ይሁኑ')}
                         </motion.div>
+                        <h2 className="text-3xl md:text-5xl font-black text-dark-bg dark:text-white mb-6 leading-tight">
+                            Fuel Your <span className="text-primary italic">Ambition</span> with <br className="hidden md:block" />
+                            Daily Inspiration
+                        </h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+                            Transform your mindset and achieve your academic goals with curated motivational content and powerful lessons.
+                        </p>
                     </div>
-                    
-                    <div className="grid lg:grid-cols-2 gap-8 items-center">
-                        {/* Quote Card with Enhanced Design */}
+
+                    {/* Category Filter */}
+                    <div className="flex flex-wrap justify-center gap-3 mb-12">
+                        {Object.keys(motivationCategories).map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveMotivationCat(cat)}
+                                className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
+                                    activeMotivationCat === cat 
+                                        ? 'bg-primary text-white shadow-xl shadow-primary/25 scale-105' 
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="grid lg:grid-cols-12 gap-8 items-start">
+                        {/* Quote Column */}
                         <motion.div 
-                            initial={{ x: -50, opacity: 0 }}
+                            initial={{ x: -30, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
                             viewport={{ once: true }}
-                            className="relative"
+                            className="lg:col-span-5 space-y-8"
                         >
-                            <div className="bg-white dark:bg-dark-card rounded-3xl p-8 md:p-10 shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl" />
-                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-accent/10 to-success/10 rounded-full blur-3xl" />
-                                
+                            {/* Quote Card */}
+                            <div className="bg-white dark:bg-dark-bg rounded-[2.5rem] p-8 md:p-12 shadow-premium border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -mr-24 -mt-24 group-hover:bg-primary/10 transition-colors" />
                                 <div className="relative z-10">
+                                    <div className="mb-8">
+                                        <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6">
+                                            <Quote className="w-6 h-6" />
+                                        </div>
+                                    </div>
                                     <AnimatePresence mode="wait">
                                         <motion.div 
                                             key={qi} 
                                             initial={{ opacity: 0, y: 20 }} 
                                             animate={{ opacity: 1, y: 0 }} 
                                             exit={{ opacity: 0, y: -20 }} 
-                                            transition={{ duration: 0.5 }}
                                             className="space-y-6"
                                         >
-                                            <div className="flex items-center justify-center lg:justify-start">
-                                                <div className="p-3 bg-primary/10 rounded-2xl">
-                                                    <Quote className="w-8 h-8 text-primary" />
-                                                </div>
-                                            </div>
-                                            <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-dark-bg dark:text-white leading-snug">
+                                            <h3 className="text-2xl md:text-3xl font-black text-dark-bg dark:text-white leading-[1.3] italic">
                                                 "{q.t}"
                                             </h3>
-                                            <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-xl">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-white text-2xl shadow-premium">
                                                     {q.e}
                                                 </div>
                                                 <div>
-                                                    <p className="text-base font-bold text-primary">{q.a}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('Motivational Speaker', 'አነቃቂ ተናጋሪ')}</p>
+                                                    <p className="font-black text-dark-bg dark:text-white">{q.a}</p>
+                                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{t('Daily Spark', 'ዕለታዊ ብልጭታ')}</p>
                                                 </div>
                                             </div>
                                         </motion.div>
                                     </AnimatePresence>
                                     
-                                    <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                        <motion.button 
-                                            whileHover={{ rotate: 180, scale: 1.1 }} 
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={nq} 
-                                            className="p-3 bg-gradient-to-br from-primary to-secondary rounded-full shadow-lg text-white hover:shadow-xl transition-shadow"
-                                        >
-                                            <RefreshCcw className="w-5 h-5" />
-                                        </motion.button>
-                                        <div>
-                                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('New quote every 7 seconds', 'በየ7 ሰከንዱ አዲስ ጥቅስ')}</p>
-                                            <p className="text-xs text-gray-400">{t('Click to change now', 'አሁን ለመቀየር ጠቅ ያድርጉ')}</p>
+                                    <div className="mt-12 flex items-center justify-between">
+                                        <div className="flex gap-2">
+                                            <button onClick={nq} className="p-4 bg-primary text-white rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all">
+                                                <RefreshCcw className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">{t('Source', 'ምንጭ')}</p>
+                                            <p className="text-xs font-bold text-primary">SESA Inspiration</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Video Card with Enhanced Design */}
-                        <motion.div
-                            initial={{ x: 50, opacity: 0 }}
-                            whileInView={{ x: 0, opacity: 1 }}
-                            viewport={{ once: true }}
-                            className="relative"
-                        >
-                            <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-black group">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
-                                <iframe 
-                                    className="w-full aspect-video border-none" 
-                                    src="https://www.youtube.com/embed/ZXGWYe01Ya8?autoplay=0&mute=0" 
-                                    title="SESA Inspiration" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowFullScreen 
-                                />
-                                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                    <div className="flex items-center gap-2">
-                                        <Play className="w-5 h-5 text-white" />
-                                        <span className="text-white font-bold text-sm">{t('Watch Our Story', 'ታሪካችንን ይመልከቱ')}</span>
+                        {/* Video Grid Column */}
+                        <div className="lg:col-span-7">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeMotivationCat}
+                                    initial={{ opacity: 0, x: 30 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -30 }}
+                                    className="grid sm:grid-cols-2 gap-4"
+                                >
+                                    {motivationCategories[activeMotivationCat as keyof typeof motivationCategories].map((vid, idx) => (
+                                        <motion.div
+                                            key={vid.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="group relative rounded-3xl overflow-hidden shadow-premium bg-black aspect-video"
+                                        >
+                                            <iframe 
+                                                className="w-full h-full border-none opacity-80 group-hover:opacity-100 transition-opacity" 
+                                                src={`https://www.youtube.com/embed/${vid.id}?autoplay=0&mute=0`} 
+                                                title={vid.title}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                allowFullScreen 
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 pointer-events-none p-5 flex flex-col justify-end">
+                                                <p className="text-white font-black text-sm group-hover:text-primary transition-colors">{vid.title}</p>
+                                                <p className="text-white/50 text-[10px] uppercase font-bold tracking-wider">{vid.author}</p>
+                                            </div>
+                                            <div className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Play className="w-4 h-4 text-white" />
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </AnimatePresence>
+                            
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                className="mt-8 p-6 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
+                                        <Target className="w-5 h-5" />
                                     </div>
+                                    <p className="text-sm font-bold text-dark-bg dark:text-white">
+                                        {t('Did you know? Consistent learning increases retention by 40%.', 'በቋሚነት መማር የማስታወስ ችሎታን በ40% ይጨምራል።')}
+                                    </p>
                                 </div>
-                            </div>
-                        </motion.div>
+                                <Link to="/auth?role=student" className="whitespace-nowrap px-6 py-2 bg-dark-bg dark:bg-white text-white dark:text-dark-bg font-black text-xs rounded-xl hover:scale-105 transition-all">
+                                    Start Learning Now
+                                </Link>
+                            </motion.div>
+                        </div>
                     </div>
                 </div>
             </Fade>

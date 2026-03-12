@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Response } from 'express';
 import Course from '../models/Course.js';
+import User from '../models/User.js';
 import { optionalAuthenticate, type AuthRequest } from '../middleware/auth.js';
 import { UserRole } from '../models/User.js';
 
@@ -60,15 +61,25 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =>
             filter.price = priceFilter;
         }
 
-        const [courses, total] = await Promise.all([
+        const [courses, instructors, total] = await Promise.all([
             Course.find(filter)
-                .populate('instructor', 'name')
+                .populate('instructor', 'name email avatar')
                 .populate('category', 'name icon')
                 .select('-students -enrolledStudents -pendingApprovals -lessons -lockedContent')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
+            User.find({
+                role: { $in: [UserRole.INSTRUCTOR, UserRole.ASSISTANT_INSTRUCTOR] },
+                $or: [
+                    { name: { $regex: q || '', $options: 'i' } },
+                    { email: { $regex: q || '', $options: 'i' } },
+                ]
+            })
+            .select('name email role avatar')
+            .limit(10)
+            .lean(),
             Course.countDocuments(filter),
         ]);
 
@@ -78,12 +89,13 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =>
             req.user?.role === UserRole.SUPER_ADMIN ||
             req.user?.role === UserRole.INSTRUCTOR;
 
-        const sanitized = isPrivileged
+        const sanitizedCourses = isPrivileged
             ? courses
             : courses.map(({ resourceUrl: _r, ...rest }) => rest);
 
         res.json({
-            courses: sanitized,
+            courses: sanitizedCourses,
+            teachers: instructors,
             query: q || '',
             filters: { category, level, minPrice, maxPrice },
             pagination: {
@@ -110,18 +122,32 @@ router.get('/suggestions', async (req: any, res: Response) => {
 
         const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-        const courses = await Course.find({
-            status: 'approved',
-            isPublished: true,
-            isHidden: { $ne: true },
-            title: { $regex: safeQ, $options: 'i' },
-        })
-            .select('title category level price thumbnailUrl')
-            .populate('category', 'name icon')
-            .limit(5)
-            .lean();
+        const [courses, instructors] = await Promise.all([
+            Course.find({
+                status: 'approved',
+                isPublished: true,
+                isHidden: { $ne: true },
+                title: { $regex: safeQ, $options: 'i' },
+            })
+                .select('title category level price thumbnailUrl')
+                .populate('category', 'name icon')
+                .limit(5)
+                .lean(),
+            User.find({
+                role: { $in: [UserRole.INSTRUCTOR, UserRole.ASSISTANT_INSTRUCTOR] },
+                name: { $regex: safeQ, $options: 'i' }
+            })
+            .select('name role avatar')
+            .limit(3)
+            .lean()
+        ]);
 
-        res.json({ suggestions: courses });
+        res.json({ 
+            suggestions: {
+                courses,
+                teachers: instructors
+            }
+        });
     } catch (err) {
         console.error('Suggestion error:', err);
         res.status(500).json({ message: 'Suggestion failed' });

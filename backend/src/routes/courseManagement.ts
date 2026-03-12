@@ -12,6 +12,7 @@ import {
     getFullCourseContent,
     getEnrollmentsForVerification,
     verifyEnrollmentAndGrantAccess,
+    rejectEnrollmentRequest,
     getTeacherPendingCourses,
     getTeacherPublishedCourses
 } from '../controllers/courseManagementController.js';
@@ -181,6 +182,21 @@ router.put('/admin/enrollments/:enrollmentId/verify',
     ],
     validate,
     verifyEnrollmentAndGrantAccess
+);
+
+/**
+ * @route   PUT /api/admin/enrollments/:enrollmentId/reject
+ * @desc    Reject enrollment
+ * @access  Private (Admin Only)
+ */
+router.put('/admin/enrollments/:enrollmentId/reject',
+    authenticate,
+    checkRole([UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR]),
+    [
+        body('adminComment').optional().isString().trim()
+    ],
+    validate,
+    rejectEnrollmentRequest
 );
 
 // ─── TEACHER DASHBOARD ROUTES ────────────────────────────────────────────────

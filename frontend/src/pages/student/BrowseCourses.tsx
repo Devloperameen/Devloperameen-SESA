@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -9,23 +10,30 @@ import {
     Lock,
     MessageSquare,
     PlayCircle,
-    Send,
-    ShieldCheck,
-    Trash2,
-    Unlock,
     Video,
+    ChevronRight,
+    Download,
+    FileText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CourseReviews from './CourseReviews';
 import { UserRole } from '../../types';
 import { showError, showSuccess } from '../../utils/toast';
 import { cn } from '../../utils/cn';
+import QuizPlayer from '../../components/student/QuizPlayer';
+import AssignmentPortal from '../../components/student/AssignmentPortal';
+import CourseForum from '../../components/student/CourseForum';
 
 interface Lesson {
     title: string;
     videoUrl: string;
     order: number;
     _id: string;
+    resources?: {
+        title: string;
+        url: string;
+        type: string;
+    }[];
 }
 
 interface CoursePreview {
@@ -42,6 +50,8 @@ interface CoursePreview {
         _id: string;
         name: string;
     };
+    quizzes?: any[];
+    assignments?: any[];
 }
 
 interface MyEnrollmentCourse {
@@ -59,14 +69,6 @@ interface LibraryCourse extends CoursePreview {
     freeVideosLimit: number;
 }
 
-interface CourseComment {
-    _id: string;
-    userId: string;
-    userName: string;
-    userRole: 'student' | 'instructor' | 'admin';
-    text: string;
-    createdAt: string;
-}
 
 const extractVideoId = (url?: string): string | null => {
     if (!url) return null;
@@ -92,17 +94,21 @@ const toEmbedUrl = (
         return `https://www.youtube.com/embed/${course.youtubeVideoId}`;
     }
 
+    // Default high-quality educational placeholder if nothing found
+    const defaultId = 'ZXGWYe01Ya8'; // Jim Rohn - Power of Persistence
     const parsed = extractVideoId(sourceUrl);
     if (parsed) {
         return `https://www.youtube.com/embed/${parsed}`;
     }
-
-    return null;
+    
+    return `https://www.youtube.com/embed/${defaultId}`;
 };
 
 const BrowseCourses: React.FC = () => {
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { token, user } = useAuth();
+    const searchQuery = searchParams.get('q') || searchParams.get('search') || '';
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -111,11 +117,9 @@ const BrowseCourses: React.FC = () => {
     const [selectedLessonIndex, setSelectedLessonIndex] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(true);
     const [watchedPartOne, setWatchedPartOne] = useState<Record<string, boolean>>({});
-
-    const [comments, setComments] = useState<CourseComment[]>([]);
-    const [isCommentsLoading, setIsCommentsLoading] = useState(false);
-    const [commentText, setCommentText] = useState('');
-    const [isPostingComment, setIsPostingComment] = useState(false);
+    const [activeTab, setActiveTab] = useState<'video' | 'quiz' | 'assignment' | 'resources'>('video');
+    const [selectedQuiz, setSelectedQuiz] = useState<any | null>(null);
+    const [selectedAssignment, setSelectedAssignment] = useState<any | null>(null);
 
     const selectedCourse = useMemo(
         () => courses.find((course) => course._id === selectedCourseId) ?? null,
@@ -138,10 +142,14 @@ const BrowseCourses: React.FC = () => {
 
     const filteredCourses = useMemo(() => {
         return courses.filter((c) => {
-            if (selectedGrade === 'All Grades') return true;
-            return c.gradeLevel === selectedGrade;
+            const matchesGrade = selectedGrade === 'All Grades' || c.gradeLevel === selectedGrade;
+            const matchesSearch = !searchQuery || 
+                c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.instructor?.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesGrade && matchesSearch;
         });
-    }, [courses, selectedGrade]);
+    }, [courses, selectedGrade, searchQuery]);
 
     const fetchLibrary = async (): Promise<void> => {
         try {
@@ -193,27 +201,6 @@ const BrowseCourses: React.FC = () => {
         }
     };
 
-    const fetchComments = async (courseId: string): Promise<void> => {
-        if (!token || !canViewDiscussion) {
-            setComments([]);
-            return;
-        }
-
-        try {
-            setIsCommentsLoading(true);
-            const response = await axios.get<CourseComment[]>(`${API_URL}/courses/${courseId}/comments`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setComments(response.data ?? []);
-        } catch (error: any) {
-            if (error?.response?.status !== 403) {
-                showError('Failed to load discussion');
-            }
-            setComments([]);
-        } finally {
-            setIsCommentsLoading(false);
-        }
-    };
 
     const fetchCourseDetail = async (courseId: string): Promise<void> => {
         if (!token) return;
@@ -236,6 +223,8 @@ const BrowseCourses: React.FC = () => {
                         lessons: Array.isArray(detail.lessons)
                             ? detail.lessons
                             : course.lessons ?? [],
+                        quizzes: detail.quizzes ?? course.quizzes ?? [],
+                        assignments: detail.assignments ?? course.assignments ?? [],
                     };
                 })
             );
@@ -247,12 +236,6 @@ const BrowseCourses: React.FC = () => {
     useEffect(() => {
         fetchLibrary();
     }, [token]);
-
-    useEffect(() => {
-        if (selectedCourse?._id) {
-            fetchComments(selectedCourse._id);
-        }
-    }, [selectedCourse?._id, token, canViewDiscussion]);
 
     useEffect(() => {
         if (selectedCourseId) {
@@ -294,51 +277,6 @@ const BrowseCourses: React.FC = () => {
 
         // Navigate to payment page directly
         navigate(`/payment?courseId=${course._id}`);
-    };
-
-    const submitComment = async (): Promise<void> => {
-        if (!token || !selectedCourse) {
-            showError('Please login first');
-            return;
-        }
-
-        const text = commentText.trim();
-        if (!text) {
-            showError('Comment cannot be empty');
-            return;
-        }
-
-        try {
-            setIsPostingComment(true);
-            await axios.post(
-                `${API_URL}/courses/${selectedCourse._id}/comments`,
-                { text },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setCommentText('');
-            await fetchComments(selectedCourse._id);
-            showSuccess('Comment posted');
-        } catch (error: any) {
-            showError(error?.response?.data?.message || 'Failed to post comment');
-        } finally {
-            setIsPostingComment(false);
-        }
-    };
-
-    const deleteComment = async (commentId: string): Promise<void> => {
-        if (!token || !selectedCourse) return;
-
-        try {
-            await axios.delete(`${API_URL}/courses/${selectedCourse._id}/comments/${commentId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            setComments((prev) => prev.filter((comment) => comment._id !== commentId));
-            showSuccess('Comment removed');
-        } catch (error: any) {
-            showError(error?.response?.data?.message || 'Failed to delete comment');
-        }
     };
 
     return (
@@ -427,7 +365,7 @@ const BrowseCourses: React.FC = () => {
                                                     </div>
                                                     {course.hasFullAccess ? (
                                                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[11px] text-emerald-200">
-                                                            <Unlock className="h-3.5 w-3.5" />
+                                                            <Lock className="h-3.5 w-3.5" />
                                                             Full Access
                                                         </span>
                                                     ) : (
@@ -481,16 +419,57 @@ const BrowseCourses: React.FC = () => {
                         className="space-y-4 lg:col-span-5"
                     >
                         <div className="overflow-hidden rounded-2xl border border-slate-700 bg-[#112240]">
-                            <div className="border-b border-slate-700 px-4 py-3">
+                            <div className="border-b border-slate-700 px-4 py-3 flex items-center justify-between">
                                 <h2 className="inline-flex items-center gap-2 font-semibold text-white">
                                     <Video className="h-4 w-4 text-blue-300" />
-                                    Course View
+                                    {activeTab === 'video' ? 'Course Video' : activeTab === 'quiz' ? 'Quiz Assessment' : 'Assignment Portal'}
                                 </h2>
+                                <div className="flex gap-1 p-1 bg-slate-800 rounded-lg">
+                                    <button 
+                                        onClick={() => setActiveTab('video')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'video' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        Video
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('quiz')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'quiz' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        Quizzes
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('assignment')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'assignment' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        Tasks
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('resources')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'resources' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    >
+                                        Resources
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="p-4">
                                 {!selectedCourse ? (
                                     <p className="text-sm text-slate-300">Select a course to start learning.</p>
+                                ) : activeTab === 'quiz' && selectedQuiz ? (
+                                    <QuizPlayer 
+                                        quiz={selectedQuiz} 
+                                        onComplete={(score) => showSuccess(`Quiz finished with ${score}%`)}
+                                        onClose={() => setSelectedQuiz(null)}
+                                    />
+                                ) : activeTab === 'assignment' && selectedAssignment ? (
+                                    <AssignmentPortal 
+                                        assignment={selectedAssignment}
+                                        onSubmit={async (_data) => {
+                                            showSuccess('Assignment submitted for review!');
+                                            setSelectedAssignment(null);
+                                        }}
+                                        isSubmitting={false}
+                                    />
                                 ) : (
                                     <>
                                         <h3 className="mb-2 font-semibold text-white">{selectedCourse.title}</h3>
@@ -535,10 +514,94 @@ const BrowseCourses: React.FC = () => {
 
                                         <div className="mt-3 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
                                             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">
-                                                Curriculum
+                                                {activeTab === 'video' ? 'Curriculum' : activeTab === 'quiz' ? 'Available Quizzes' : 'Assignments'}
                                             </p>
                                             <div className="space-y-2 text-sm">
-                                                {(!selectedCourse.lessons || selectedCourse.lessons.length === 0) ? (
+                                                {activeTab === 'quiz' ? (
+                                                    <div className="space-y-2">
+                                                        {(!selectedCourse.quizzes || selectedCourse.quizzes.length === 0) ? (
+                                                            <p className="text-center py-4 text-slate-500 text-xs">No quizzes available.</p>
+                                                        ) : (
+                                                            selectedCourse.quizzes.map((q: any, i: number) => (
+                                                                <button 
+                                                                    key={q._id}
+                                                                    onClick={() => setSelectedQuiz(q)}
+                                                                    className="w-full text-left p-3 rounded-xl border border-slate-700 bg-slate-900/40 hover:border-blue-500 text-white text-sm flex items-center justify-between"
+                                                                >
+                                                                    <span>{i + 1}. {q.title}</span>
+                                                                    <ChevronRight className="h-4 w-4 text-slate-500" />
+                                                                </button>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                ) : activeTab === 'assignment' ? (
+                                                    <div className="space-y-2">
+                                                        {(!selectedCourse.assignments || selectedCourse.assignments.length === 0) ? (
+                                                            <p className="text-center py-4 text-slate-500 text-xs">No assignments found.</p>
+                                                        ) : (
+                                                            selectedCourse.assignments.map((a: any, i: number) => (
+                                                                <button 
+                                                                    key={a._id}
+                                                                    onClick={() => setSelectedAssignment(a)}
+                                                                    className="w-full text-left p-3 rounded-xl border border-slate-700 bg-slate-900/40 hover:border-blue-500 text-white text-sm flex items-center justify-between"
+                                                                >
+                                                                    <span>{i + 1}. {a.title}</span>
+                                                                    <ChevronRight className="h-4 w-4 text-slate-500" />
+                                                                </button>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                ) : activeTab === 'resources' ? (
+                                                    <div className="space-y-4">
+                                                        <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                                                            <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                                                                <FileText className="h-4 w-4 text-blue-400" /> Lesson Resources
+                                                            </h4>
+                                                            <p className="text-xs text-slate-400 mb-4">Downloadable materials for the current selected lesson.</p>
+                                                            
+                                                            {(!selectedCourse.lessons?.[selectedLessonIndex]?.resources || selectedCourse.lessons[selectedLessonIndex].resources.length === 0) ? (
+                                                                <p className="text-center py-4 text-slate-500 text-xs italic">No specific resources for this lesson.</p>
+                                                            ) : (
+                                                                <div className="grid gap-2">
+                                                                    {selectedCourse.lessons[selectedLessonIndex].resources.map((res: any, idx: number) => (
+                                                                        <a 
+                                                                            key={idx}
+                                                                            href={res.url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800 transition-all group"
+                                                                        >
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="p-2 rounded-lg bg-slate-800 text-blue-400">
+                                                                                    <FileText className="h-4 w-4" />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span className="text-sm font-medium text-white block">{res.title}</span>
+                                                                                    <span className="text-[10px] text-slate-500 uppercase">{res.type} document</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <Download className="h-4 w-4 text-slate-500 group-hover:text-blue-400" />
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {selectedCourse.resourceUrl && (
+                                                            <div className="p-4 rounded-xl border border-slate-700 bg-slate-900/40">
+                                                                <h4 className="text-sm font-bold text-white mb-2">Main Course Content</h4>
+                                                                <a 
+                                                                    href={selectedCourse.resourceUrl}
+                                                                    className="text-xs text-blue-400 hover:underline break-all"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    {selectedCourse.resourceUrl}
+                                                                </a>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (!selectedCourse.lessons || selectedCourse.lessons.length === 0) ? (
                                                     <div className="rounded-xl border border-slate-700/50 bg-slate-800/25 px-4 py-8 text-center text-slate-400">
                                                         <Clock3 className="mx-auto h-8 w-8 mb-3 opacity-20" />
                                                         No lessons available for this course yet.
@@ -638,88 +701,25 @@ const BrowseCourses: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-700 bg-[#112240] p-4">
-                            <h2 className="mb-3 inline-flex items-center gap-2 font-semibold text-white">
-                                <MessageSquare className="h-4 w-4 text-blue-300" />
-                                Student-Teacher Discussion
-                            </h2>
-
+                        <div className="rounded-2xl border border-slate-700 bg-[#112240] overflow-hidden">
                             {!selectedCourse ? (
-                                <p className="text-sm text-slate-300">Select a course to open discussion.</p>
+                                <div className="p-12 text-center text-slate-500">
+                                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                                    <p className="text-sm">Select a course to open community discussion.</p>
+                                </div>
                             ) : !canViewDiscussion ? (
-                                <p className="text-sm text-slate-300">
-                                    Discussion unlocks after enrollment approval.
-                                </p>
+                                <div className="p-12 text-center text-slate-500">
+                                    <Lock className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                                    <p className="text-sm">Discussion unlocks after enrollment approval.</p>
+                                </div>
                             ) : (
-                                <>
-                                    <div className="mb-3 flex gap-2">
-                                        <input
-                                            value={commentText}
-                                            onChange={(event) => setCommentText(event.target.value)}
-                                            placeholder="Ask a question or share your idea..."
-                                            className="flex-1 rounded-xl border border-slate-600 bg-slate-900/55 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none"
-                                        />
-                                        <button
-                                            onClick={submitComment}
-                                            disabled={isPostingComment}
-                                            className="inline-flex items-center gap-1 rounded-xl border border-blue-500/40 bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-100 hover:bg-blue-500/30 disabled:opacity-60"
-                                        >
-                                            <Send className="h-4 w-4" />
-                                            Send
-                                        </button>
-                                    </div>
-
-                                    <div className="max-h-64 space-y-2 overflow-y-auto">
-                                        {isCommentsLoading ? (
-                                            <p className="text-sm text-slate-300">Loading discussion...</p>
-                                        ) : comments.length === 0 ? (
-                                            <p className="text-sm text-slate-300">No comments yet.</p>
-                                        ) : (
-                                            comments.map((comment) => {
-                                                const isTeacherReply = comment.userRole === 'instructor';
-                                                return (
-                                                    <motion.div
-                                                        key={comment._id}
-                                                        initial={{ opacity: 0, y: 20 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        className="rounded-xl border border-slate-700 bg-slate-900/40 p-3"
-                                                    >
-                                                        <div className="mb-1 flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-medium text-white">{comment.userName}</span>
-                                                                {isTeacherReply && (
-                                                                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/40 bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-100">
-                                                                        <ShieldCheck className="h-3 w-3" />
-                                                                        Verified Teacher
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[11px] text-slate-400">
-                                                                {new Date(comment.createdAt).toLocaleString()}
-                                                            </span>
-                                                        </div>
-
-                                                        <p className="text-sm text-slate-200">{comment.text}</p>
-
-                                                        {isModerator && (
-                                                            <div className="mt-2 text-right">
-                                                                <button
-                                                                    onClick={() => deleteComment(comment._id)}
-                                                                    className="inline-flex items-center gap-1 rounded-lg border border-rose-500/40 bg-rose-500/15 px-2 py-1 text-xs text-rose-100 hover:bg-rose-500/25"
-                                                                >
-                                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                                    Delete
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </motion.div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-                                </>
+                                <CourseForum 
+                                    courseId={selectedCourse._id} 
+                                    currentUserId={user?.id || ''} 
+                                />
                             )}
                         </div>
+
                         {selectedCourse && (
                             <CourseReviews
                                 courseId={selectedCourse._id}

@@ -26,9 +26,12 @@ import Analytics from "./pages/instructor/Analytics";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Approvals from "./pages/admin/Approvals";
 import AdminCourses from "./pages/admin/AdminCourses";
+import AdminInstructors from "./pages/admin/AdminInstructors";
 import Categories from "./pages/admin/Categories";
 import Settings from "./pages/admin/Settings";
+import CoursePreview from "./pages/admin/CoursePreview";
 import MyCourses from "./pages/instructor/MyCourses";
+import NotFound from "./pages/NotFound";
 import { UserRole } from "./types";
 import "./index.css";
 
@@ -79,7 +82,7 @@ const AppRoutes: React.FC = () => {
                     <Route
                         path="/student/browse"
                         element={
-                            <ProtectedRoute allowedRoles={[UserRole.STUDENT]} wrapLayout>
+                            <ProtectedRoute allowedRoles={[UserRole.STUDENT, UserRole.INSTRUCTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR]} wrapLayout>
                                 <BrowseCourses />
                             </ProtectedRoute>
                         }
@@ -145,9 +148,17 @@ const AppRoutes: React.FC = () => {
                         }
                     />
                     <Route
+                        path="/admin/instructors"
+                        element={
+                            <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]} wrapLayout>
+                                <AdminInstructors />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
                         path="/admin/approvals"
                         element={
-                            <ProtectedRoute allowedRoles={[UserRole.ADMIN]} wrapLayout>
+                            <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MODERATOR]} wrapLayout>
                                 <Approvals />
                             </ProtectedRoute>
                         }
@@ -163,8 +174,16 @@ const AppRoutes: React.FC = () => {
                     <Route
                         path="/admin/courses"
                         element={
-                            <ProtectedRoute allowedRoles={[UserRole.ADMIN]} wrapLayout>
+                            <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MODERATOR]} wrapLayout>
                                 <AdminCourses />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin/courses/:id/preview"
+                        element={
+                            <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.MODERATOR]} wrapLayout>
+                                <CoursePreview />
                             </ProtectedRoute>
                         }
                     />
@@ -177,7 +196,7 @@ const AppRoutes: React.FC = () => {
                         }
                     />
 
-                    <Route path="*" element={<Navigate to="/" />} />
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </main>
             {!isAppContent && <Footer />}

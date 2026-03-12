@@ -380,6 +380,77 @@ export const verifyEnrollmentAndGrantAccess = async (req: AuthRequest, res: Resp
 };
 
 /**
+ * @route   PUT /api/admin/enrollments/:enrollmentId/reject
+ * @desc    Reject enrollment
+ * @access  Private (Admin Only)
+ */
+export const rejectEnrollmentRequest = async (req: AuthRequest, res: Response) => {
+    try {
+        const { enrollmentId } = req.params;
+        const { adminComment } = req.body;
+
+        const enrollment = await Enrollment.findById(enrollmentId)
+            .populate('user', 'name email')
+            .populate('course', 'title instructor');
+
+        if (!enrollment) {
+            return res.status(404).json({ message: 'Enrollment not found' });
+        }
+
+        if (enrollment.status !== 'pending') {
+            return res.status(400).json({ message: 'Enrollment is not in pending status' });
+        }
+
+        // Update payment status to failed/rejected
+        await Payment.updateOne(
+            { user: enrollment.user._id, course: enrollment.course._id },
+            { status: 'failed', updatedAt: new Date() }
+        );
+
+        // Update enrollment status
+        enrollment.status = 'rejected';
+        enrollment.adminComment = adminComment || 'Enrollment rejected by admin';
+        enrollment.updatedAt = new Date();
+        await enrollment.save();
+
+        // Update course pendingApprovals if exists
+        const course = await Course.findById(enrollment.course._id);
+        if (course) {
+            course.pendingApprovals = course.pendingApprovals.filter(
+                (id) => id.toString() !== enrollment.user._id.toString()
+            );
+            
+            const studentEntry = course.students.find(
+                (entry) => entry.studentId.toString() === enrollment.user._id.toString()
+            );
+            
+            if (studentEntry) {
+                studentEntry.status = 'rejected';
+                studentEntry.approvedAt = new Date(); 
+            }
+            
+            await course.save();
+        }
+
+        // Notify student
+        notifyUser(
+            enrollment.user._id.toString(),
+            `Your enrollment for "${(enrollment.course as any).title}" has been rejected. ${adminComment ? 'Reason: ' + adminComment : ''}`,
+            { courseId: enrollment.course._id, status: 'rejected' }
+        );
+
+        res.json({
+            message: 'Enrollment rejected',
+            enrollment
+        });
+    } catch (error) {
+        console.error('Reject enrollment error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+/**
  * @route   GET /api/teacher/courses/my-pending
  * @desc    Get teacher's courses pending admin review
  * @access  Private (Teacher Only)
